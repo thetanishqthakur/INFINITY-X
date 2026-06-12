@@ -19,10 +19,6 @@ jobs:
     timeout-minutes: 360
 
     steps:
-
-    # ─────────────────────────────────────────
-    # STEP 1 — Disk Space Maximize
-    # ─────────────────────────────────────────
     - name: Maximize Build Space
       uses: easimon/maximize-build-space@master
       with:
@@ -33,9 +29,6 @@ jobs:
         remove-haskell: 'true'
         remove-codeql: 'true'
 
-    # ─────────────────────────────────────────
-    # STEP 2 — Build Environment Setup
-    # ─────────────────────────────────────────
     - name: Setup Build Environment
       run: |
         sudo apt-get update
@@ -48,9 +41,6 @@ jobs:
           openjdk-21-jdk bc ccache lzop libssl-dev \
           libelf-dev libtinfo5
 
-    # ─────────────────────────────────────────
-    # STEP 3 — Repo Tool Setup
-    # ─────────────────────────────────────────
     - name: Setup Repo Tool
       run: |
         mkdir -p ~/bin
@@ -58,18 +48,12 @@ jobs:
         chmod a+x ~/bin/repo
         echo "$HOME/bin" >> $GITHUB_PATH
 
-    # ─────────────────────────────────────────
-    # STEP 4 — Git Config
-    # ─────────────────────────────────────────
     - name: Git Config
       run: |
         git config --global user.email "hunter@build.com"
         git config --global user.name "HunteR"
 
-    # ─────────────────────────────────────────
-    # STEP 5 — Sync Infinity X Android 16 Source
-    # ─────────────────────────────────────────
-    - name: Sync Infinity X Source (Android 16)
+    - name: Sync Infinity X Source
       run: |
         mkdir -p ~/android/infinity
         cd ~/android/infinity
@@ -81,40 +65,22 @@ jobs:
           --optimized-fetch --prune --force-sync \
           -j$(nproc --all)
 
-    # ─────────────────────────────────────────
-    # STEP 6 — Clone Device Trees
-    # ─────────────────────────────────────────
     - name: Clone Device Trees
       run: |
         cd ~/android/infinity
-
-        # Device Tree — TERA FORK (apna username daal)
         git clone https://github.com/thetanishqthakur/android_device_xiaomi_peridot \
           device/xiaomi/peridot -b lineage-23.2 --depth=1
-
-        # Vendor Blobs — crdroid ka (Android 16 compatible)
         git clone https://github.com/crdroidandroid/proprietary_vendor_xiaomi_peridot \
           vendor/xiaomi/peridot --depth=1
-
-        # Hardware Xiaomi — crdroid ka
         git clone https://github.com/crdroidandroid/android_hardware_xiaomi_peridot \
           hardware/xiaomi --depth=1
-
-        # Kernel Source
         git clone https://github.com/peridot-dev/android_kernel_xiaomi_sm8635 \
           kernel/xiaomi/sm8635 --depth=1
-
-        # Kernel Modules
         git clone https://github.com/peridot-dev/android_kernel_xiaomi_sm8635-modules \
           kernel/xiaomi/sm8635-modules --depth=1
-
-        # Kernel Device Trees
         git clone https://github.com/peridot-dev/android_kernel_xiaomi_sm8635-devicetrees \
           kernel/xiaomi/sm8635-devicetrees --depth=1
 
-    # ─────────────────────────────────────────
-    # STEP 7 — Build ROM
-    # ─────────────────────────────────────────
     - name: Build ROM
       run: |
         cd ~/android/infinity
@@ -122,20 +88,15 @@ jobs:
         lunch infinity_peridot-${{ github.event.inputs.BUILD_TYPE }}
         m bacon -j$(nproc --all)
 
-    # ─────────────────────────────────────────
-    # STEP 8 — Upload to GitHub Releases
-    # ─────────────────────────────────────────
     - name: Upload ROM to Releases
       uses: softprops/action-gh-release@v2
       with:
         tag_name: infinity-x-a16-peridot-${{ github.run_number }}
         name: "Infinity X Android 16 - Peridot | By HunteR"
         body: |
-          ## Infinity X Android 16 — POCO F6 (Peridot)
-          **Maintainer:** HunteR
-          **Build Type:** UNOFFICIAL
-          **Android:** 16
-          **Build Number:** ${{ github.run_number }}
+          Maintainer: HunteR
+          Build Type: UNOFFICIAL
+          Android: 16
         files: |
           ~/android/infinity/out/target/product/peridot/*.zip
       env:
